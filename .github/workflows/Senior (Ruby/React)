@@ -1,0 +1,176 @@
+
+
+Using CoffeeScript in Rails
+By Mario H. Felix Specialist PhD
+Ruby
+
+April 13, 2021
+Share:
+
+
+
+
+
+First released in 2009 and still under constant development, CoffeeScript is an alternative syntax for writing JavaScript that is quickly gaining popularity. Because it compiles down to JavaScript (versus assembly or some other bytecode like many languages), CoffeeScript is already useable in browsers that support JavaScript and on platforms like node.js.
+
+Today I’ll show you how to add CoffeeScript to a Rails application—in this case, we’ll continue building on our “shorty” url shortener from my Building Your First Rails Application series—to add some basic JavaScript using CoffeeScript and Barista, a gem to add seamless CoffeeScript support to Rails applications.
+
+Getting Started
+To get started with Barista, we first need to add the required gems to our Gemfile. Hence, open up said file and add:
+
+gem 'barista'
+If you’re on Ruby 1.8.7 or lower, you’ll likely need to also add the JSON gem to your Gemfile as:
+
+gem 'json'
+Lastly, you’ll need a JavaScript interpreter to run the CoffeeScript compiler. If you’re on OSX the Ruby wrapper (shipped in the coffee-script gem) will use the built in system interpreter but if you’re on another platform, you’ll want to check the ExecJS README which goes over the options available. One simple option is to embed v8 into your application by adding the following to your Gemfile:
+
+gem 'therubyracer', :require => nil
+Next, run the following which will force bundler to update the gems, making them available to your Rails application and will then generate a configuration for barista:
+
+bundle install
+rails g barista:install
+Opening up config/initializers/barista_config.rb, you should now see a set of options which let you configure how barista works—Feel free to have a look around. Next we’ll start using Barista to add CoffeeScript to our application.
+
+Writing Some Code
+For this post, we’re going to do something relatively simple using CoffeeScript. Using jQuery, we’ll embed an iframe to preview the url below the text entry.
+
+The first thing we need to do to do is remove the existing JavaScript files and replace them with jQuery. To do this, we’ll add the following to our Gemfile:
+
+gem 'jquery-rails'
+And then run:
+
+bundle install
+rails g jquery:install
+If it asks about a conflict, respond with ‘yes’ so the existing files are over-written (you are using an SCM, right?) This will tell Rails to use jQuery instead of Prototype for your application.
+
+Next, open app/coffeescripts/shorty.coffee in your text editor (you may have to make the folder first) and add the following code:
+
+$(document).ready ->
+  preview = $("#preview-url")
+  $('#url_url').keyup ->
+    current_value = $.trim @value
+    if current_value is ''
+      preview.hide().attr 'src', ''
+    else
+      preview.show().attr 'src', current_value
+This code is our implementation – When we change the url text fields value, it will automatically update the iframe. Next, open application/views/layouts/application.html.erb and change:
+
+<%= javascript_include_tag :defaults %>
+To
+
+<%= javascript_include_tag :defaults, 'shorty' %>
+This will tell Rails to also include the shorty JavaScript file (automatically compiled from your shorty.coffee file in the page).
+
+Finally, we need to add the actual iframe to the page. In the new url view (app/views/urls/new.html.erb), add the following code to the bottom of the page:
+
+<iframe id='preview-url' style='width: 600px; height: 400px; display: none'></iframe>
+Note: For demonstration purposes, we’ve set the CSS inline. Typically, you’d do so in a normal css stylesheet.
+
+Finally, save all the files and start the web server up again using rails server.
+
+Opening your browser, you should now be able to visit http://localhost:3000/ and the page should load as expected. Start typing and you’ll see it automatically shows / hides the url as it attempts to load it as soon as possible. As you can see, Barista automatically took care of compiling the CoffeeScript file to a JavaScript equivalent for us in the background and will do so whenever the file is changed.
+
+
+Learn PHP for free!
+Make the leap into server-side programming with a comprehensive cover of PHP & MySQL.
+
+Normally RRP $39.99 Yours absolutely free
+
+Name
+Email
+Get the book free
+If you open and look at public/javascripts/shorty.js, you’ll see that using the CoffeeScript compiler, Barista has automatically converted the code above to something similar to:
+
+/* DO NOT MODIFY. This file was compiled Wed, 13 Apr 2011 01:10:20 GMT from
+ * /path/to/your/app/app/coffeescripts/shorty.coffee
+ */
+
+(function() {
+  $(document).ready(function() {
+    var preview;
+    preview = $("#preview-url");
+    return $('#url_url').keyup(function() {
+      var current_value;
+      current_value = $.trim(this.value);
+      if (current_value === '') {
+        return preview.hide().attr('src', '');
+      } else {
+        return preview.show().attr('src', current_value);
+      }
+    });
+  });
+}).call(this);
+Debugging Issues
+If the above didn’t work for you, there are a few things to check. Look at your application log and look for barista-related error messages. The most common issues you’ll find:
+
+Compilation failed due to a missing compiler
+If you’re deploying to somewhere else (e.g. Heroku), you may have to either embed an interpreter like V8 (via the gem therubyracer) or commit the generated JavaScript to your repository
+Going back to the getting started steps, check out the ExecJS link again and you’ll find out the alternative JavaScript hosts.
+
+Taking It Further
+Now that you’ve got the basics supported, I suggest going off on your own and having a bit of a play around. As you can see, because CoffeeScript is compiled to JavaScript we can use all our existing libraries like jQuery with minimum effort, making it simple to use jQuery and your own JavaScript to:
+
+Make it so that urls are only loaded if they ‘look valid’ (e.g. the current version attempts to preview everything)
+Use a timer / some other method of detecting changes to avoid changing it every single time we type a character
+Expand out the URLs to use something like Embed.ly to preview the content
+To learn a bit more about CoffeScript, read through the excellent interactive tutorial on the CoffeeScript site to get a feel for how it handles conversions.
+
+If you do add more features, comment below and let us know how you went about it / how you found the process.
+
+Darcy Laycock
+Darcy Laycock
+Darcy Laycock is a web application developer from Perth, Western Australia. By day, he writes code for The Frontier Group and by night he's a Code Monkey for Youth Tree (A youth-oriented organisation) from Perth and avid contributor to open source ruby projects.
+
+Latest Remote Jobs
+SitePoint
+Senior Frontend Engineer
+SitePoint
+
+react
+javascript
+SimpleMDM
+Senior Software Engineer – Ruby on Rails
+SimpleMDM
+
+ruby on rails
+react
+Lasso
+WordPress Developers
+Lasso
+
+wordpress
+php
+Pennylane
+Senior Software Engineer (Ruby / React)
+Pennylane
+
+ruby on rails
+react
+Tutuka
+AWS Infrastructure Engineer
+Tutuka
+
+aws
+More Remote Jobs
+Stuff we do
+Premium
+Newsletters
+Forums
+Deals
+Remote Jobs
+About
+Our story
+Terms of use
+Privacy policy
+Corporate memberships
+Contact
+Contact us
+FAQ
+Publish your book with us
+Write an article for us
+Advertise
+Connect
+© 2000 – 2021 SitePoint Pty. Ltd.
+
+This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply.
+
